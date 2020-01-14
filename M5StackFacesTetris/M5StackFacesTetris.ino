@@ -19,6 +19,7 @@ Point pos; Block block;
 int rot, fall_cnt = 0;
 bool started = false, gameover = false;
 boolean but_A = false, but_LEFT = false, but_RIGHT = false;
+uint8_t old_key_val = 0xff;     // １つ前のキー入力状態を保持
 int game_speed = 25; // 25msec
 Block blocks[7] = {
   {{{{-1,0},{0,0},{1,0},{2,0}},{{0,-1},{0,0},{0,1},{0,2}},
@@ -113,10 +114,13 @@ bool KeyPadLoop(){
   Wire.requestFrom(0X08, 1);        // 0x08アドレスから1バイト読み出す要求
   if(0 != Wire.available()) {       // 読み出すデータがあれば処理をする
     uint8_t key_val = Wire.read();  // 1バイトデータを取得
-    // ↑：FE ↓：FD ←：FB →：F7 A：EF B：DF SELECT：BF START：7F
-    if(0xFB == key_val){ClearKeys();but_LEFT =true;return true;}  // ← 押下処理
-    if(0xF7 == key_val){ClearKeys();but_RIGHT=true;return true;}  // → 押下処理
-    if(0xEF == key_val){ClearKeys();but_A    =true;return true;}  // A 押下処理
+    if (old_key_val != key_val ) {  // １つ前で取得したキー情報と同じでなければ処理をする
+      old_key_val = key_val;  // 取得したキー情報を保持
+      // ↑：FE ↓：FD ←：FB →：F7 A：EF B：DF SELECT：BF START：7F
+      if(0xFB == key_val){ClearKeys();but_LEFT =true;return true;}  // ← 押下処理
+      if(0xF7 == key_val){ClearKeys();but_RIGHT=true;return true;}  // → 押下処理
+      if(0xEF == key_val){ClearKeys();but_A    =true;return true;}  // A 押下処理
+    }
   }
   return false;
 }
