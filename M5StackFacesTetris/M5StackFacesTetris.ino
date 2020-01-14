@@ -40,6 +40,7 @@ extern uint8_t tetris_img[];
 //========================================================================
 void setup(void) {
   M5.begin();                   // M5STACK INITIALIZE
+  Wire.begin();                 // I2Cを利用できるようにする
   M5.Lcd.setBrightness(200);    // BRIGHTNESS = MAX 255
   M5.Lcd.fillScreen(BLACK);     // CLEAR SCREEN
   //----------------------------// Make Block ----------------------------
@@ -108,6 +109,15 @@ bool KeyPadLoop(){
   if(M5.BtnA.wasPressed()){ClearKeys();but_LEFT =true;return true;}
   if(M5.BtnB.wasPressed()){ClearKeys();but_RIGHT=true;return true;}
   if(M5.BtnC.wasPressed()){ClearKeys();but_A    =true;return true;}
+  // GameBoyカバーボタンの対応
+  Wire.requestFrom(0X08, 1);        // 0x08アドレスから1バイト読み出す要求
+  if(0 != Wire.available()) {       // 読み出すデータがあれば処理をする
+    uint8_t key_val = Wire.read();  // 1バイトデータを取得
+    // ↑：FE ↓：FD ←：FB →：F7 A：EF B：DF SELECT：BF START：7F
+    if(0xFB == key_val){ClearKeys();but_LEFT =true;return true;}  // ← 押下処理
+    if(0xF7 == key_val){ClearKeys();but_RIGHT=true;return true;}  // → 押下処理
+    if(0xEF == key_val){ClearKeys();but_A    =true;return true;}  // A 押下処理
+  }
   return false;
 }
 //========================================================================
