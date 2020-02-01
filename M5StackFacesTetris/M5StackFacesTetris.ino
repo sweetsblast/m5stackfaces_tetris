@@ -18,7 +18,7 @@ struct Block {Point square[4][4]; int numRotate, color;};
 Point pos; Block block;
 int rot, fall_cnt = 0;
 bool started = false, gameover = false;
-boolean but_A = false, but_LEFT = false, but_RIGHT = false;
+boolean but_A = false, but_LEFT = false, but_RIGHT = false, but_DOWN = false;
 uint8_t old_key_val = 0xff;     // １つ前のキー入力状態を保持
 int game_speed = 25; // 25msec
 Block blocks[7] = {
@@ -104,7 +104,7 @@ void GameOver() {
   gameover = true;
 }
 //========================================================================
-void ClearKeys() { but_A=false; but_LEFT=false; but_RIGHT=false;}
+void ClearKeys() { but_A=false; but_LEFT=false; but_RIGHT=false; but_DOWN=false;}
 //========================================================================
 bool KeyPadLoop(){
   if(M5.BtnA.wasPressed()){ClearKeys();but_LEFT =true;return true;}
@@ -121,6 +121,10 @@ bool KeyPadLoop(){
       if(0xF7 == key_val){ClearKeys();but_RIGHT=true;return true;}  // → 押下処理
       if(0xEF == key_val){ClearKeys();but_A    =true;return true;}  // A 押下処理
     }
+    if (0xFD == key_val) {   // ↓ 押下処理
+      old_key_val = key_val;  // 取得したキー情報を保持
+      ClearKeys();but_DOWN =true;return true;
+    }
   }
   return false;
 }
@@ -131,7 +135,10 @@ void GetNextPosRot(Point* pnext_pos, int* pnext_rot) {
   if (!started) return;
   pnext_pos->X = pos.X;
   pnext_pos->Y = pos.Y;
-  if ((fall_cnt = (fall_cnt + 1) % 10) == 0) pnext_pos->Y += 1;
+  fall_cnt ++;
+  if (received && but_DOWN) { but_DOWN = false; fall_cnt ++;} // ↓ボタン押下時は落下速度アップ
+  if (fall_cnt >= 10) {fall_cnt = fall_cnt % 10; pnext_pos->Y += 1;}
+  // if ((fall_cnt = (fall_cnt + 1) % 10) == 0) pnext_pos->Y += 1; // 元のコード（自動落下）
   else if (received) {
     if (but_LEFT) { but_LEFT = false; pnext_pos->X -= 1;}
     else if (but_RIGHT) { but_RIGHT = false; pnext_pos->X += 1;}
